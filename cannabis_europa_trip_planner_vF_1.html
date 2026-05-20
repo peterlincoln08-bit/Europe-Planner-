@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cannabis Europa London 2026 — Trip Planner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: #0f1219; color: #e2e8f0; min-height: 100vh; }
+
+  /* header */
+  .header { background: linear-gradient(135deg, #0f1219, #1a2332); border-bottom: 1px solid #1e293b; padding: 18px 20px 12px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .header-sub { font-size: 9px; font-weight: 600; letter-spacing: 2.5px; color: #64748b; text-transform: uppercase; margin-bottom: 3px; }
+  .header-title { font-size: 19px; font-weight: 700; color: #f8fafc; line-height: 1.2; margin-bottom: 2px; }
+  .header-meta { font-size: 11px; color: #94a3b8; }
+  .btn-print { background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; margin-top: 2px; font-family: inherit; }
+  .btn-print:hover { background: #334155; color: #f8fafc; }
+
+  /* tabs */
+  .tab-bar { display: flex; gap: 2px; padding: 8px 20px; }
+  .tab-btn { flex: 1; padding: 6px 3px; font-size: 10px; font-weight: 500; color: #64748b; background: transparent; border: 1px solid transparent; border-radius: 6px; cursor: pointer; text-transform: capitalize; font-family: inherit; transition: all .15s; }
+  .tab-btn.active { font-weight: 700; color: #f8fafc; background: #1e293b; border-color: #334155; }
+
+  /* day tabs */
+  .day-bar { display: flex; gap: 4px; padding: 4px 20px 10px; overflow-x: auto; }
+  .day-btn { flex: 1; padding: 7px 4px; border: none; border-radius: 7px; cursor: pointer; min-width: 68px; font-family: inherit; transition: all .15s; }
+  .day-btn .dl { font-size: 10px; font-weight: 700; }
+  .day-btn .ds { font-size: 8px; margin-top: 1px; opacity: .8; }
+
+  /* blocks */
+  .block { background: #1a2332; border: 1px solid #1e293b; border-radius: 8px; padding: 9px 11px; cursor: pointer; transition: border-color .15s; margin-bottom: 5px; }
+  .block.expanded { cursor: default; }
+  .block-row { display: flex; align-items: flex-start; gap: 8px; }
+  .block-icon { font-size: 13px; margin-top: 1px; flex-shrink: 0; }
+  .block-body { flex: 1; min-width: 0; }
+  .block-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .block-title { font-size: 12px; font-weight: 600; color: #f1f5f9; }
+  .block-time { font-size: 10px; color: #64748b; font-family: monospace; white-space: nowrap; flex-shrink: 0; }
+  .block-loc { font-size: 10px; color: #64748b; margin-top: 1px; }
+  .block-detail { margin-top: 7px; padding-top: 7px; border-top: 1px solid #1e293b; }
+  .block-notes { font-size: 11px; color: #cbd5e1; line-height: 1.55; }
+
+  /* editable */
+  [contenteditable] { outline: none; border-bottom: 1px dashed transparent; transition: border-color .15s; cursor: text; }
+  [contenteditable]:hover { border-bottom-color: #334155; }
+  [contenteditable]:focus { border-bottom-color: #475569; }
+
+  /* checklist */
+  .check-row { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; background: #1a2332; border: 1px solid #1e293b; border-radius: 7px; margin-bottom: 4px; cursor: default; transition: all .15s; }
+  .check-row.done { border-color: var(--done-color); }
+  .check-box { width: 15px; height: 15px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; border: 2px solid #334155; background: transparent; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; font-weight: 700; cursor: pointer; transition: all .15s; }
+  .check-row.done .check-box { border-color: var(--done-color); background: var(--done-color); }
+  .check-text { font-size: 11px; line-height: 1.5; color: #cbd5e1; flex: 1; }
+  .check-row.done .check-text { color: var(--done-color); text-decoration: line-through; opacity: .7; }
+
+  /* targets */
+  .target { background: #1a2332; border: 1px solid #1e293b; border-radius: 8px; padding: 9px 11px; display: flex; align-items: center; gap: 9px; margin-bottom: 5px; }
+  .target-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .target-name { font-size: 12px; font-weight: 600; color: #f1f5f9; }
+  .target-role { font-size: 10px; color: #64748b; margin-top: 1px; }
+  .target-prio { font-size: 8px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+
+  /* notes */
+  .notes-section { padding: 0 20px 20px; }
+  .notes-label { font-size: 10px; font-weight: 700; color: #475569; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .notes-area { width: 100%; min-height: 100px; background: #1a2332; color: #e2e8f0; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; font-size: 13px; font-family: inherit; line-height: 1.6; resize: vertical; outline: none; }
+  .notes-area:focus { border-color: #334155; }
+
+  /* info box */
+  .info-box { background: #1a2332; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+  .info-label { font-size: 10px; font-weight: 600; margin-bottom: 4px; }
+  .info-text { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+
+  /* panel content */
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .panel-title { font-size: 14px; font-weight: 700; color: #f8fafc; margin-bottom: 3px; }
+  .panel-sub { font-size: 11px; color: #64748b; margin-bottom: 12px; }
+  .section-pad { padding: 10px 20px 0; }
+  .day-header { padding: 10px 20px 6px; }
+  .day-date { font-size: 14px; font-weight: 700; color: #f8fafc; }
+  .day-title { font-size: 11px; color: #64748b; margin-top: 1px; }
+  .blocks-wrap { padding: 0 20px 12px; }
+
+  /* save indicator */
+  .save-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #059669; margin-right: 5px; vertical-align: middle; }
+  .save-msg { font-size: 9px; color: #64748b; padding: 4px 20px 0; }
+
+  /* reset button */
+  .btn-reset { background: transparent; color: #64748b; border: 1px solid #1e293b; border-radius: 5px; padding: 3px 8px; font-size: 9px; cursor: pointer; font-family: inherit; margin-left: 6px; }
+  .btn-reset:hover { color: #ef4444; border-color: #ef4444; }
+
+  /* schedule edit controls */
+  .block-controls { display: flex; align-items: center; gap: 3px; margin-top: 8px; padding-top: 7px; border-top: 1px solid #1e293b; }
+  .ctrl-btn { background: transparent; color: #64748b; border: 1px solid #1e293b; border-radius: 4px; padding: 3px 7px; font-size: 10px; cursor: pointer; font-family: inherit; transition: all .15s; }
+  .ctrl-btn:hover { color: #f8fafc; border-color: #334155; background: #1e293b; }
+  .ctrl-btn.del:hover { color: #ef4444; border-color: #ef4444; background: transparent; }
+  .ctrl-spacer { flex: 1; }
+  .type-select { background: #0f1219; color: #cbd5e1; border: 1px solid #1e293b; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-family: inherit; cursor: pointer; outline: none; }
+  .type-select:hover { border-color: #334155; }
+  .add-block-row { padding: 4px 20px 14px; }
+  .btn-add-block { width: 100%; background: transparent; color: #64748b; border: 1px dashed #334155; border-radius: 8px; padding: 9px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; }
+  .btn-add-block:hover { color: #f8fafc; border-color: #475569; background: #1a2332; }
+
+  /* ── PRINT ── */
+  @media print {
+    body, html { background: #fff !important; color: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 11px; }
+    .no-print { display: none !important; }
+    .header { background: #1e293b !important; padding: 12px 16px !important; }
+    .header * { color: #fff !important; }
+    .panel { display: block !important; }
+    .block, .target, .check-row, .info-box { background: #f8fafc !important; border-color: #e2e8f0 !important; break-inside: avoid; }
+    .block *, .target *, .check-row *, .info-box * { color: #1e293b !important; }
+    .block-detail { border-top-color: #e2e8f0 !important; }
+    [contenteditable] { border-bottom: none !important; }
+    .block-controls, .add-block-row { display: none !important; }
+    .notes-area { background: #f8fafc !important; border-color: #e2e8f0 !important; color: #1e293b !important; min-height: 60px !important; }
+    .print-section-title { font-size: 15px; font-weight: 700; border-bottom: 2px solid #cbd5e1; padding: 6px 20px; margin-bottom: 6px; break-before: page; }
+    .print-section-title:first-of-type { break-before: auto; }
+    .check-row.done .check-text { color: #059669 !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-sub">Chicago Atlantic — Project Moose</div>
+    <div class="header-title">Cannabis Europa London</div>
+    <div class="header-meta">May 25–28, 2026 · Barbican + Nottingham</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:4px" class="no-print">
+    <button class="btn-print" onclick="handlePrint()">🖨 Print all</button>
+    <button class="btn-reset" onclick="handleReset()">Reset</button>
+  </div>
+</div>
+<div class="save-msg no-print"><span class="save-dot"></span>Auto-saves your edits locally</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar no-print" id="tabBar"></div>
+
+<!-- PANELS -->
+<div id="panelSchedule" class="panel active"></div>
+<div id="panelTargets" class="panel"></div>
+<div id="panelDiligence" class="panel"></div>
+<div id="panelFacility" class="panel"></div>
+<div id="panelCompanies" class="panel"></div>
+
+<script>
+// ─── DATA ───
+const STORE_KEY = "ce_trip_v2";
+
+const DEFAULT = {
+  days: [
+    { id:"mon", label:"MON 25", title:"Arrival & Prep", date:"Monday, May 25", color:"#64748b", blocks:[
+      {time:"18:00–20:00",title:"Arrive London",type:"travel",location:"Heathrow → Hotel",notes:"Heathrow Express to Paddington (15 min) or Elizabeth Line to Farringdon (45 min, closer to Barbican). Hotel recommendation: The Zetter (Clerkenwell) or Montcalm Royal London (near Barbican)."},
+      {time:"20:00–21:00",title:"Check-in & settle",type:"logistics",location:"Hotel",notes:"Charge devices, print any materials, confirm conference registration QR code."},
+      {time:"21:00–22:30",title:"Prep session",type:"prep",location:"Hotel",notes:"Review key targets list. Finalise diligence questions for GROW mgmt. Review Cannabis Europa speaker list. Draft outreach messages to Cantourage, Cansativa, Curaleaf."},
+    ]},
+    { id:"tue", label:"TUE 26", title:"Conference Day 1", date:"Tuesday, May 26", color:"#0d9488", blocks:[
+      {time:"08:00–09:00",title:"Registration & coffee networking",type:"conference",location:"Barbican Centre, Silk St, EC2Y 8DS",notes:"Arrive early — best networking before sessions. Target: find GROW team, confirm Thursday site visit."},
+      {time:"09:00–10:30",title:"Main Stage — Opening sessions",type:"conference",location:"Main Stage, Barbican",notes:"Key session: US rescheduling impact on European markets. Policy signals on UK regulatory evolution — relevant to GROW's licensing moat."},
+      {time:"10:30–11:00",title:"Coffee break — targeted networking",type:"networking",location:"Barbican foyer",notes:"Priority: GROW management (Ben/Dean), IPS Pharma reps, Cantourage UK. Ask about IPS/GROW dynamics informally."},
+      {time:"11:00–12:30",title:"Sessions — Telemedicine & prescribing",type:"conference",location:"Greenhouse Stage",notes:"'The End of E-Prescriptions? Europe's Telehealth Crossroads' — German market risk. Speakers: Kristine Lütke, Dirk Heitepriem."},
+      {time:"12:30–14:00",title:"Lunch networking",type:"networking",location:"Barbican / nearby",notes:"Schedule 1:1 follow-ups. Face time with Curaleaf, Lyphe, Celadon. Gauge competitive dynamics."},
+      {time:"14:00–15:30",title:"Sessions — Investment & capital markets",type:"conference",location:"Main Stage",notes:"'Is Cannabis Investment Turning a Corner?' — Karan Wadhera (Casa Verde / Sanity Group investor)."},
+      {time:"15:30–17:00",title:"Sessions — UK market deep-dive",type:"conference",location:"Greenhouse Stage",notes:"UK-specific panels on supply chain, pricing, regulatory outlook. Note competitive positioning claims."},
+      {time:"17:00–18:00",title:"End of day networking",type:"networking",location:"Barbican foyer",notes:"Wrap-up conversations. Exchange contacts. Confirm dinner plans."},
+      {time:"20:00–22:00",title:"Business of Cannabis Awards Party",type:"social",location:"Rivington Street, Shoreditch",notes:"VIP pass or £50 standalone. Best informal networking opportunity of the trip."},
+    ]},
+    { id:"wed", label:"WED 27", title:"Conference Day 2", date:"Wednesday, May 27", color:"#2563eb", blocks:[
+      {time:"08:30–09:00",title:"Morning coffee networking",type:"conference",location:"Barbican Centre",notes:"Day 2 thinner crowds — better speaker access. Follow up on yesterday's leads."},
+      {time:"09:00–10:30",title:"Sessions — European expansion",type:"conference",location:"Main Stage",notes:"EU cross-border prescription rules, supply chain logistics, UK→Germany market access. GROW's Germany optionality."},
+      {time:"10:30–12:00",title:"Sessions — M&A, pricing, access",type:"conference",location:"Greenhouse Stage",notes:"Competitive consolidation intel. Who's buying whom? Multiples discussed? GROW valuation context."},
+      {time:"12:00–13:30",title:"Working lunch — GROW management",type:"meeting",location:"TBD (arrange with Ben/Dean)",notes:"Key topics: IPS relationship, £6.8m addbacks breakdown, Nottingham timeline, Thursday logistics."},
+      {time:"13:30–15:00",title:"Selective sessions or 1:1s",type:"networking",location:"Barbican / nearby",notes:"Flexible — remaining sessions or 1:1 meetings with Day 1 contacts."},
+      {time:"15:00–17:00",title:"Closing sessions & wrap-up",type:"conference",location:"Main Stage",notes:"Final networking. Collect contacts. Send follow-up emails same-day."},
+      {time:"18:00–20:00",title:"Dinner — optional",type:"social",location:"Clerkenwell / Shoreditch",notes:"Quality Chop House, Morito (Exmouth Market), or room service + notes."},
+      {time:"20:00–21:30",title:"Trip notes & debrief",type:"prep",location:"Hotel",notes:"Write up takeaways. Organise contacts. Confirm Nottingham logistics."},
+    ]},
+    { id:"thu", label:"THU 28", title:"Nottingham Site Visit", date:"Thursday, May 28", color:"#7c3aed", blocks:[
+      {time:"07:15–09:15",title:"Train to Nottingham",type:"travel",location:"St Pancras → Nottingham",notes:"East Midlands Railway ~1h50m. Advance ticket £30–50. Review facility questions on train."},
+      {time:"09:30–10:00",title:"Arrive & meet GROW team",type:"meeting",location:"GROW Nottingham MTIF",notes:"Coordinate address with Ben/Dean. Expect security protocols — Schedule 1 facility."},
+      {time:"10:00–12:30",title:"Facility tour & management meeting",type:"meeting",location:"Nottingham MTIF",notes:"Clean rooms, drug vaulting, QMS, processing equipment, storage. Utilisation rate, expansion timeline, owned vs. leased."},
+      {time:"12:30–13:30",title:"Working lunch with management",type:"meeting",location:"Nottingham",notes:"Relationship building. Team depth, key-man risk, competitive threats, IPS long-term view."},
+      {time:"14:00–15:00",title:"Wrap-up & final questions",type:"meeting",location:"Nottingham MTIF",notes:"Final Q&A. Request data room items. Confirm deliverable timelines. Next steps."},
+      {time:"15:30–17:30",title:"Train back to London",type:"travel",location:"Nottingham → St Pancras",notes:"Draft site visit notes. Start IC memo observations."},
+      {time:"18:00+",title:"Depart or overnight",type:"travel",location:"Heathrow / hotel",notes:"Allow 2+ hours St Pancras → Heathrow if flying same evening."},
+    ]},
+  ],
+  targets: [
+    {name:"Ben / Dean (GROW)",role:"Management — primary diligence contacts",priority:"critical"},
+    {name:"Philip Schetter",role:"CEO, Cantourage Group",priority:"high"},
+    {name:"Karan Wadhera",role:"MP, Casa Verde Capital (Sanity Group investor)",priority:"high"},
+    {name:"Curaleaf UK team",role:"Competitor — vertically integrated",priority:"medium"},
+    {name:"Lyphe Group reps",role:"Competitor — largest UK pharmacy/clinic network",priority:"medium"},
+    {name:"IPS Pharma / Grow Pharma",role:"Key GROW counterparty — independent intel",priority:"high"},
+    {name:"Celadon Pharma",role:"UK domestic cultivator — market perspective",priority:"medium"},
+    {name:"Cannabis Industry Council",role:"UK trade body — regulatory outlook",priority:"low"},
+  ],
+  diligence: [
+    "IPS relationship: related party or arm's length? Equity overlap or exclusivity?",
+    "£6.8m IPS addbacks: itemised breakdown with supporting documentation",
+    "Nottingham facility: owned or leased? Freehold acquisition plans?",
+    "Current manufacturing utilisation rate vs. expanded capacity target",
+    "Expansion capex budget and timeline — when does capacity come online?",
+    "Working capital cycle: average days inventory, receivables, payables",
+    "Customer concentration: % of revenue from top 3 clinics/pharmacies",
+    "Germany entity: activity today? Revenue contribution? Licensing status?",
+    "Key-man risk: critical operators and bench depth?",
+    "Insurance: product liability, D&O, property — current coverage levels?",
+  ],
+  facility: [
+    "Clean room infrastructure — grade, maintenance, recent audit results",
+    "Controlled drug vault — security, monitoring, capacity",
+    "EU-GMP compliance — last MHRA inspection date and findings",
+    "Processing equipment — age, condition, throughput capacity",
+    "Quality management system — digital or paper? Batch tracking?",
+    "Storage capacity — current vs. maximum, temperature-controlled areas",
+    "Staffing — headcount, shifts, qualified persons on-site",
+    "Expansion plans — blueprints, planning permission, contractor status",
+    "Owned vs. leased — lease terms, break clauses, renewal options",
+    "Business continuity — backup power, disaster recovery, insurance",
+  ],
+  companies: [
+    {cat:"Confirmed exhibitor",name:"Cantourage Group",why:"GROW's closest comparable — toll-road model. Ask Philip Schetter about German market dynamics, pricing trends, telemedicine ban risk.",color:"#059669"},
+    {cat:"Confirmed exhibitor",name:"Sanity Group",why:"Best-funded European cannabis company ($109m raised). BAT-backed. Ask about consolidation outlook and processing margins.",color:"#059669"},
+    {cat:"Confirmed exhibitor",name:"Curaleaf International",why:"Direct GROW competitor — vertically integrated (Rokshaw + clinic + pharmacy). Key intel on UK market share shifts.",color:"#059669"},
+    {cat:"Confirmed exhibitor",name:"Storz & Bickel",why:"Leading vaporiser manufacturer (Mighty, Volcano). Hardware side of the value chain — device-product pairing trends.",color:"#059669"},
+    {cat:"UK supply chain",name:"GROW Group",why:"Primary diligence target. Confirm conference attendance, lock in Wed lunch and Thu site visit.",color:"#f59e0b"},
+    {cat:"UK supply chain",name:"IPS Pharma / Grow Pharma",why:"GROW's key counterparty. Independent intel on the relationship — exclusivity, revenue dependency, addbacks context.",color:"#f59e0b"},
+    {cat:"UK supply chain",name:"Lyphe Group",why:"Largest UK pharmacy + clinic network. Competitive perspective on GROW's market position and distribution dynamics.",color:"#f59e0b"},
+    {cat:"UK supply chain",name:"Celadon Pharmaceuticals",why:"UK domestic cultivator with MHRA EU-GMP approval. Perspective on domestic cultivation economics vs. import model.",color:"#f59e0b"},
+    {cat:"UK supply chain",name:"CanMart",why:"UK importer/distributor. Understand wholesale pricing, margin dynamics, and how they view GROW as competitor or partner.",color:"#f59e0b"},
+    {cat:"German operators",name:"Cansativa",why:"BfArM-designated sole domestic distributor. Structural position in German supply chain — closest GROW analogue in DE.",color:"#2563eb"},
+    {cat:"German operators",name:"Four 20 Pharma",why:"Berlin-based importer/wholesaler. Mid-market perspective on German competitive dynamics.",color:"#2563eb"},
+    {cat:"German operators",name:"Demecan",why:"Only independent German cultivator. Domestic production economics and BfArM cultivation licence dynamics.",color:"#2563eb"},
+    {cat:"Investors & advisors",name:"Casa Verde Capital",why:"Karan Wadhera — Sanity Group investor. Smart money perspective on European cannabis valuations and deal flow.",color:"#a855f7"},
+    {cat:"Investors & advisors",name:"Soje Capital",why:"Cannabis-focused investment firm. Market intel on capital availability and deal structures in the sector.",color:"#a855f7"},
+    {cat:"Investors & advisors",name:"FTI Consulting",why:"Strategic comms advisor to cannabis companies. Regulatory and reputational risk landscape.",color:"#a855f7"},
+    {cat:"Industry bodies",name:"Cannabis Industry Council (UK)",why:"UK trade body — regulatory outlook, NHS access prospects, upcoming policy changes.",color:"#64748b"},
+    {cat:"Industry bodies",name:"Prohibition Partners",why:"Conference organiser + leading market data provider. Latest market sizing, prescription data, competitive intel.",color:"#64748b"},
+    {cat:"International",name:"Alcaliber",why:"Spanish pharma company with cannabis division. EU-GMP production economics from a traditional pharma perspective.",color:"#0ea5e9"},
+    {cat:"International",name:"Brains Bioceutical",why:"Canadian CBD/cannabinoid producer. Cross-border supply dynamics and international partnership models.",color:"#0ea5e9"},
+    {cat:"International",name:"Tilray / Aphria",why:"Largest international supplier to UK & Germany. Upstream pricing, supply agreements, EU cultivation strategy.",color:"#0ea5e9"},
+  ],
+  checked: {},
+  notes: { schedule:"", targets:"", diligence:"", facility:"", companies:"" },
+  activeDay: "tue",
+  activeTab: "schedule",
+  expanded: {},
+};
+
+const ICONS = { travel:"✈", logistics:"🏨", prep:"📋", conference:"🎤", networking:"🤝", meeting:"📌", social:"🍷" };
+const BORDERS = { travel:"#94a3b8", logistics:"#94a3b8", prep:"#ca8a04", conference:"#059669", networking:"#2563eb", meeting:"#7c3aed", social:"#ea580c" };
+const PCOLORS = { critical:"#ef4444", high:"#f59e0b", medium:"#3b82f6", low:"#64748b" };
+
+// ─── STATE ───
+let S;
+function load() { try { S = JSON.parse(localStorage.getItem(STORE_KEY)); if (!S || !S.days) throw 0; if(!S.companies) S.companies = JSON.parse(JSON.stringify(DEFAULT.companies)); if(!S.notes.companies) S.notes.companies = ""; } catch { S = JSON.parse(JSON.stringify(DEFAULT)); } }
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+
+// ─── RENDER ───
+function render() {
+  renderTabs();
+  renderSchedule();
+  renderTargets();
+  renderDiligence();
+  renderFacility();
+  renderCompanies();
+  showPanel(S.activeTab);
+}
+
+function renderTabs() {
+  const tabs = [["schedule","Schedule"],["targets","Targets"],["companies","Companies"],["diligence","Diligence Qs"],["facility","Site Visit"]];
+  document.getElementById("tabBar").innerHTML = tabs.map(([id,lb]) =>
+    `<button class="tab-btn ${S.activeTab===id?"active":""}" onclick="switchTab('${id}')">${lb}</button>`
+  ).join("");
+}
+
+function showPanel(id) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.getElementById("panel" + id.charAt(0).toUpperCase() + id.slice(1)).classList.add("active");
+}
+
+function switchTab(id) { S.activeTab = id; save(); renderTabs(); showPanel(id); }
+
+function switchDay(id) { S.activeDay = id; save(); renderSchedule(); }
+
+function toggleExpand(key) { S.expanded[key] = !S.expanded[key]; save(); renderSchedule(); }
+
+function toggleCheck(key) { S.checked[key] = !S.checked[key]; save(); renderDiligence(); renderFacility(); }
+
+function updateField(path, val) {
+  const parts = path.split(".");
+  let obj = S;
+  for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
+  obj[parts[parts.length-1]] = val;
+  save();
+}
+
+function renderSchedule() {
+  const el = document.getElementById("panelSchedule");
+  const d = S.days.find(x => x.id === S.activeDay);
+  let html = `<div class="day-bar no-print">`;
+  S.days.forEach(dy => {
+    const act = S.activeDay === dy.id;
+    html += `<button class="day-btn" style="background:${act ? dy.color : "#1e293b"};color:${act ? "#fff" : "#94a3b8"}" onclick="switchDay('${dy.id}')"><div class="dl">${dy.label}</div><div class="ds">${dy.title}</div></button>`;
+  });
+  html += `</div>`;
+  html += renderDayBlocks(d, false);
+  html += renderNotesBox("schedule");
+  el.innerHTML = html;
+  bindNotes("schedule");
+}
+
+function renderDayBlocks(d, forPrint) {
+  let html = `<div class="day-header"><div class="day-date">${d.date}</div><div class="day-title">${d.title}</div></div><div class="blocks-wrap">`;
+  const dIdx = S.days.indexOf(d);
+  const typeKeys = Object.keys(ICONS);
+  d.blocks.forEach((b, i) => {
+    const key = `${d.id}-${i}`;
+    const isE = forPrint || S.expanded[key];
+    html += `<div class="block ${isE?"expanded":""}" style="border-color:${isE ? BORDERS[b.type] : "#1e293b"}" ${forPrint ? "" : `onclick="toggleExpand('${key}')"`}>`;
+    html += `<div class="block-row"><div class="block-icon">${ICONS[b.type]}</div><div class="block-body">`;
+    html += `<div class="block-head"><span class="block-title" contenteditable="true" onclick="event.stopPropagation()" onblur="updateField('days.${dIdx}.blocks.${i}.title',this.innerText)">${b.title}</span>`;
+    html += `<span class="block-time" contenteditable="true" onclick="event.stopPropagation()" onblur="updateField('days.${dIdx}.blocks.${i}.time',this.innerText)">${b.time}</span></div>`;
+    html += `<div class="block-loc" contenteditable="true" onclick="event.stopPropagation()" onblur="updateField('days.${dIdx}.blocks.${i}.location',this.innerText)">${b.location}</div>`;
+    if (isE) {
+      html += `<div class="block-detail"><div class="block-notes" contenteditable="true" onclick="event.stopPropagation()" onblur="updateField('days.${dIdx}.blocks.${i}.notes',this.innerText)">${b.notes}</div></div>`;
+      if (!forPrint) {
+        const opts = typeKeys.map(k => `<option value="${k}" ${k===b.type?"selected":""}>${ICONS[k]} ${k}</option>`).join("");
+        html += `<div class="block-controls no-print" onclick="event.stopPropagation()">`;
+        html += `<select class="type-select" onchange="changeBlockType(${dIdx}, ${i}, this.value)">${opts}</select>`;
+        html += `<div class="ctrl-spacer"></div>`;
+        html += `<button class="ctrl-btn" onclick="moveBlock(${dIdx}, ${i}, -1)" title="Move up" ${i===0?"disabled style=opacity:.3":""}>↑</button>`;
+        html += `<button class="ctrl-btn" onclick="moveBlock(${dIdx}, ${i}, 1)" title="Move down" ${i===d.blocks.length-1?"disabled style=opacity:.3":""}>↓</button>`;
+        html += `<button class="ctrl-btn del" onclick="deleteBlock(${dIdx}, ${i})" title="Delete block">Delete</button>`;
+        html += `</div>`;
+      }
+    }
+    html += `</div></div></div>`;
+  });
+  html += `</div>`;
+  if (!forPrint) {
+    html += `<div class="add-block-row no-print"><button class="btn-add-block" onclick="addBlock(${dIdx})">+ Add block to ${d.label}</button></div>`;
+  }
+  return html;
+}
+
+function addBlock(dIdx) {
+  S.days[dIdx].blocks.push({
+    time: "00:00–00:00",
+    title: "New block",
+    type: "meeting",
+    location: "Location",
+    notes: "Notes..."
+  });
+  const newIdx = S.days[dIdx].blocks.length - 1;
+  S.expanded[`${S.days[dIdx].id}-${newIdx}`] = true;
+  save();
+  renderSchedule();
+}
+
+function deleteBlock(dIdx, bIdx) {
+  if (!confirm("Delete this block?")) return;
+  S.days[dIdx].blocks.splice(bIdx, 1);
+  // clean up expanded keys for this day to avoid stale state
+  const dayId = S.days[dIdx].id;
+  Object.keys(S.expanded).forEach(k => { if (k.startsWith(dayId + "-")) delete S.expanded[k]; });
+  save();
+  renderSchedule();
+}
+
+function moveBlock(dIdx, bIdx, dir) {
+  const blocks = S.days[dIdx].blocks;
+  const tgt = bIdx + dir;
+  if (tgt < 0 || tgt >= blocks.length) return;
+  [blocks[bIdx], blocks[tgt]] = [blocks[tgt], blocks[bIdx]];
+  // shift expanded state with the move
+  const dayId = S.days[dIdx].id;
+  const a = S.expanded[`${dayId}-${bIdx}`];
+  const b = S.expanded[`${dayId}-${tgt}`];
+  S.expanded[`${dayId}-${bIdx}`] = b;
+  S.expanded[`${dayId}-${tgt}`] = a;
+  save();
+  renderSchedule();
+}
+
+function changeBlockType(dIdx, bIdx, newType) {
+  S.days[dIdx].blocks[bIdx].type = newType;
+  save();
+  renderSchedule();
+}
+
+function renderTargets() {
+  const el = document.getElementById("panelTargets");
+  let html = `<div class="section-pad"><div class="panel-title">Key Targets</div><div class="panel-sub">Tap any field to edit</div>`;
+  S.targets.forEach((t, i) => {
+    html += `<div class="target"><div class="target-dot" style="background:${PCOLORS[t.priority]}"></div><div style="flex:1"><div class="target-name" contenteditable="true" onblur="updateField('targets.${i}.name',this.innerText)">${t.name}</div><div class="target-role" contenteditable="true" onblur="updateField('targets.${i}.role',this.innerText)">${t.role}</div></div><div class="target-prio" style="color:${PCOLORS[t.priority]}">${t.priority}</div></div>`;
+  });
+  html += `<div class="info-box" style="margin-top:12px"><div class="info-label" style="color:#f59e0b">💡 Key intel target</div><div class="info-text">IPS Pharma reps — any colour on the GROW relationship (exclusivity, revenue dependency, competitive dynamics) is gold for underwriting.</div></div></div>`;
+  html += renderNotesBox("targets");
+  el.innerHTML = html;
+  bindNotes("targets");
+}
+
+function renderDiligence() {
+  const el = document.getElementById("panelDiligence");
+  let html = `<div class="section-pad"><div class="panel-title">Diligence Questions</div><div class="panel-sub">Tap checkbox to mark · tap text to edit</div>`;
+  html += renderChecklist(S.diligence, "diligence", "dq-", "#059669");
+  html += `</div>` + renderNotesBox("diligence");
+  el.innerHTML = html;
+  bindNotes("diligence");
+}
+
+function renderFacility() {
+  const el = document.getElementById("panelFacility");
+  let html = `<div class="section-pad"><div class="panel-title">Nottingham Site Visit</div><div class="panel-sub">Thursday, May 28</div>`;
+  html += `<div class="info-box"><div class="info-label" style="color:#c4b5fd">🚆 Getting there</div><div class="info-text">East Midlands Railway: St Pancras → Nottingham (~1h50m). Depart 07:15, arrive ~09:05. Advance single £30–50.</div></div>`;
+  html += `<div style="font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:8px">Inspection checklist</div>`;
+  html += renderChecklist(S.facility, "facility", "fc-", "#7c3aed");
+  html += `<div class="info-box" style="margin-top:12px;border-color:#334155"><div class="info-label" style="color:#ef4444">⚠ Reminder</div><div class="info-text">Schedule 1 facility. Security protocols, possible photo restrictions, likely NDA. Confirm with Ben/Dean 48hrs ahead.</div></div>`;
+  html += `</div>` + renderNotesBox("facility");
+  el.innerHTML = html;
+  bindNotes("facility");
+}
+
+function renderCompanies() {
+  const el = document.getElementById("panelCompanies");
+  const cats = [...new Set(S.companies.map(c => c.cat))];
+  let html = `<div class="section-pad"><div class="panel-title">Target Companies</div><div class="panel-sub">Companies to engage at the conference — tap any field to edit</div>`;
+  cats.forEach(cat => {
+    const items = S.companies.filter(c => c.cat === cat);
+    const catColor = items[0]?.color || "#64748b";
+    html += `<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${catColor};margin-bottom:6px;padding-left:2px">${cat}</div>`;
+    items.forEach((c, ci) => {
+      const gi = S.companies.indexOf(c);
+      html += `<div class="target" style="border-left:3px solid ${c.color}"><div style="flex:1"><div class="target-name" contenteditable="true" onblur="updateField('companies.${gi}.name',this.innerText)">${c.name}</div><div class="target-role" contenteditable="true" onblur="updateField('companies.${gi}.why',this.innerText)">${c.why}</div></div></div>`;
+    });
+    html += `</div>`;
+  });
+  html += `<div class="info-box" style="margin-top:4px"><div class="info-label" style="color:#059669">✅ Confirmed exhibitors</div><div class="info-text">Cantourage, Sanity Group, Curaleaf, and Storz & Bickel are confirmed on the exhibition floor. Other companies listed are highly likely attendees based on market positioning and past attendance.</div></div></div>`;
+  html += renderNotesBox("companies");
+  el.innerHTML = html;
+  bindNotes("companies");
+}
+
+function renderChecklist(items, storeKey, prefix, color) {
+  let html = "";
+  items.forEach((q, i) => {
+    const ck = S.checked[prefix + i];
+    html += `<div class="check-row ${ck?"done":""}" style="--done-color:${color}${ck?`;background:${color}11`:""}">`;
+    html += `<div class="check-box" onclick="toggleCheck('${prefix}${i}')">${ck ? "✓" : ""}</div>`;
+    html += `<div class="check-text" contenteditable="true" onclick="event.stopPropagation()" onblur="updateField('${storeKey}.${i}',this.innerText)">${q}</div>`;
+    html += `</div>`;
+  });
+  return html;
+}
+
+function renderNotesBox(id) {
+  return `<div class="notes-section"><div class="notes-label">Notes</div><textarea class="notes-area" id="notes_${id}" placeholder="Type notes here...">${S.notes[id] || ""}</textarea></div>`;
+}
+
+function bindNotes(id) {
+  const ta = document.getElementById("notes_" + id);
+  if (ta) ta.addEventListener("input", () => { S.notes[id] = ta.value; save(); });
+}
+
+// ─── PRINT ───
+function handlePrint() {
+  // Temporarily render all panels expanded for print
+  const panels = document.querySelectorAll(".panel");
+  panels.forEach(p => p.classList.add("active"));
+
+  // Build print-only schedule with all days expanded
+  const orig = document.getElementById("panelSchedule").innerHTML;
+  let printHTML = `<div class="print-section-title" style="break-before:auto">Schedule</div>`;
+  S.days.forEach(d => { printHTML += renderDayBlocks(d, true); });
+  if (S.notes.schedule) printHTML += `<div class="notes-section"><div class="notes-label">NOTES — SCHEDULE</div><div class="notes-area" style="min-height:40px;white-space:pre-wrap">${S.notes.schedule}</div></div>`;
+  document.getElementById("panelSchedule").innerHTML = printHTML;
+
+  setTimeout(() => {
+    window.print();
+    // Restore
+    document.getElementById("panelSchedule").innerHTML = orig;
+    bindNotes("schedule");
+    panels.forEach(p => { if (p.id !== "panel" + S.activeTab.charAt(0).toUpperCase() + S.activeTab.slice(1)) p.classList.remove("active"); });
+  }, 300);
+}
+
+function handleReset() {
+  if (confirm("Reset all edits and notes? This cannot be undone.")) {
+    localStorage.removeItem(STORE_KEY);
+    S = JSON.parse(JSON.stringify(DEFAULT));
+    render();
+  }
+}
+
+// ─── INIT ───
+load();
+render();
+</script>
+</body>
+</html>
